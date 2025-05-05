@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Interactivo del Sur de México</title>
+    <style>
+        :root {
+            --color-low: #f8d5a3;
+            --color-medium: #f0a830;
+            --color-high: #e04b1a;
+            --color-selected: #3a7bd5;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        
+        .dashboard {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .map-container {
+            flex: 2;
+            min-width: 600px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 15px;
+        }
+        
+        .data-panel {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            display: none;
+        }
+        
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .state {
+            stroke: #fff;
+            stroke-width: 0.5;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            fill: #f8d5a3; /* Color por defecto */
+        }
+        
+        .state:hover {
+            stroke-width: 1.5;
+            stroke: #333;
+        }
+        
+        .state.selected {
+            stroke: #333;
+            stroke-width: 2;
+            filter: drop-shadow(0 0 5px rgba(58, 123, 213, 0.7));
+        }
+        
+        .state-tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            transform: translate(-50%, -100%);
+            display: none;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            margin-top: 15px;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            border: 1px solid #ddd;
+        }
+        
+        .data-section {
+            margin-bottom: 20px;
+        }
+        
+        .data-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .data-bar-container {
+            height: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+        
+        .data-bar {
+            height: 100%;
+            background: linear-gradient(to right, #3a7bd5, #00d2ff);
+            border-radius: 5px;
+        }
+        
+        .data-value {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .state-name {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: var(--color-selected);
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .data-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .filter-btn {
+            padding: 5px 10px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        
+        .filter-btn:hover {
+            background: #e0e0e0;
+        }
+        
+        .filter-btn.active {
+            background: var(--color-selected);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Estadísticas del Sur de México</h1>
+    
+    <div class="dashboard">
+        <div class="map-container">
+            <svg viewBox="0 0 1000 850" xmlns="http://www.w3.org/2000/svg">
+                <!-- Aquí irán los paths de los estados del sur -->
+                <!-- Comenzaremos con Chiapas -->
+                <!-- Reemplaza los paths de Chiapas y Oaxaca con estos: -->
+<!-- Guerrero (GRO) -->
+<path id="gro" class="state" data-name="Guerrero" 
+      d="M300,550 L350,540 L380,550 L370,580 L340,590 L320,580 L310,560 Z"/>
+<text x="340" y="570" font-size="10" text-anchor="middle">GRO</text>
+
+<!-- Oaxaca (OAX) - Conectado a Guerrero -->
+<path id="oax" class="state" data-name="Oaxaca" 
+      d="M380,550 L430,540 L460,550 L470,580 L460,590 L440,600 L420,590 L400,580 Z"/>
+<text x="430" y="580" font-size="10" text-anchor="middle">OAX</text>
+
+<!-- Chiapas (CHIS) - Conectado a Oaxaca -->
+<path id="chis" class="state" data-name="Chiapas" 
+      d="M460,580 L510,570 L540,580 L550,600 L540,610 L520,620 L500,610 L480,600 Z"/>
+<text x="500" y="600" font-size="10" text-anchor="middle">CHIS</text>
+
+<!-- Veracruz (VER) - Conectado a Oaxaca y Chiapas -->
+<path id="ver" class="state" data-name="Veracruz" 
+      d="M380,500 L430,490 L460,510 L470,540 L460,550 L440,560 L420,550 L400,540 Z"/>
+<text x="430" y="530" font-size="10" text-anchor="middle">VER</text>
+
+<!-- Tabasco (TAB) - Conectado a Chiapas y Veracruz -->
+<path id="tab" class="state" data-name="Tabasco" 
+      d="M470,540 L520,530 L550,550 L540,570 L520,580 L500,570 L490,560 Z"/>
+<text x="510" y="560" font-size="10" text-anchor="middle">TAB</text>
+            </svg>
+            
+            <div class="legend">
+                <div class="legend-item" onclick="filterByData('all')">
+                    <div class="legend-color" style="background: var(--color-low);"></div>
+                    <span>Bajo</span>
+                </div>
+                <div class="legend-item" onclick="filterByData('medium')">
+                    <div class="legend-color" style="background: var(--color-medium);"></div>
+                    <span>Medio</span>
+                </div>
+                <div class="legend-item" onclick="filterByData('high')">
+                    <div class="legend-color" style="background: var(--color-high);"></div>
+                    <span>Alto</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="data-panel" id="dataPanel">
+            <div class="state-name" id="stateName">Estado</div>
+            
+            <div class="data-filters">
+                <button class="filter-btn active" onclick="changeDataView('poverty')">Pobreza</button>
+                <button class="filter-btn" onclick="changeDataView('education')">Educación</button>
+                <button class="filter-btn" onclick="changeDataView('health')">Salud</button>
+            </div>
+            
+            <div class="data-section" id="povertyData">
+                <div class="data-title">
+                    <span>Pobreza (%)</span>
+                    <span class="data-value" id="povertyValue">45%</span>
+                </div>
+                <div class="data-bar-container">
+                    <div class="data-bar" id="povertyBar" style="width: 45%;"></div>
+                </div>
+                
+                <div class="data-title">
+                    <span>Pobreza extrema (%)</span>
+                    <span class="data-value" id="extremePovertyValue">12%</span>
+                </div>
+                <div class="data-bar-container">
+                    <div class="data-bar" style="width: 12%;"></div>
+                </div>
+            </div>
+            
+            <div class="data-section" id="educationData" style="display: none;">
+                <div class="data-title">
+                    <span>Educación superior (%)</span>
+                    <span class="data-value" id="educationValue">32%</span>
+                </div>
+                <div class="data-bar-container">
+                    <div class="data-bar" id="educationBar" style="width: 32%;"></div>
+                </div>
+                
+                <div class="data-title">
+                    <span>Analfabetismo (%)</span>
+                    <span class="data-value" id="illiteracyValue">5%</span>
+                </div>
+                <div class="data-bar-container">
+                    <div class="data-bar" style="width: 5%;"></div>
+                </div>
+            </div>
+            
+            <div class="data-section" id="healthData" style="display: none;">
+                <div class="data-title">
+                    <span>Mortalidad infantil (por 1000)</span>
+                    <span class="data-value" id="mortalityValue">14</span>
+                </div>
+                <div class="data-bar-container">
+                    <div class="data-bar" id="mortalityBar" style="width: 14%;"></div>
+                </div>
+                
+                <div class="data-title">
+                    <span>Acceso a salud (%)</span>
+                    <span class="data-value" id="healthValue">68%</span>
+                </div>
+                <div class="data-bar-container">
+                    <div class="data-bar" style="width: 68%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="state-tooltip" id="stateTooltip"></div>
+    
+    <script>
+        // Datos simulados por estado (comenzamos con Chiapas)
+        const stateData = {
+    // Guerrero (Datos 2023)
+    'gro': {
+        poverty: 59.3,         // % CONEVAL 2023
+        extremePoverty: 22.6,  // % CONEVAL 2023
+        education: 18.9,       // % con educación superior (INEGI 2023)
+        illiteracy: 11.4,      // % INEGI 2023
+        mortality: 13.1,       // Tasa x 1000 nacimientos (SSA 2023)
+        health: 61.2,          // % con acceso a salud (ENSANUT 2023)
+        population: 3.54       // Millones (CONAPO 2023)
+    },
+    
+    // Oaxaca (Datos 2023)
+    'oax': {
+        poverty: 61.7,
+        extremePoverty: 23.9,
+        education: 17.8,
+        illiteracy: 12.1,
+        mortality: 13.7,
+        health: 62.4,
+        population: 4.13
+    },
+    
+    // Chiapas (Datos 2024 - últimos disponibles)
+    'chis': {
+        poverty: 67.4,         // CONEVAL 2024
+        extremePoverty: 28.1,
+        education: 15.2,
+        illiteracy: 13.5,
+        mortality: 14.3,
+        health: 58.6,
+        population: 5.80
+    },
+    
+    // Veracruz (Zona Sur - Datos 2023)
+    'ver': {
+        poverty: 53.2,
+        extremePoverty: 18.7,
+        education: 21.4,
+        illiteracy: 9.3,
+        mortality: 12.9,
+        health: 67.8,
+        population: 8.06
+    },
+    
+    // Tabasco (Datos 2024)
+    'tab': {
+        poverty: 49.6,
+        extremePoverty: 15.8,
+        education: 23.1,
+        illiteracy: 7.5,
+        mortality: 11.4,
+        health: 72.5,
+        population: 2.45
+    }
+};
+
+            
+            // Agregar más estados según sea necesario  
+
+
+
+        
+        
+        let currentState = 'chis'; // Empezamos con Chiapas seleccionado
+        let currentView = 'poverty';
+        
+        // Tooltip
+        const tooltip = document.getElementById('stateTooltip');
+        document.querySelectorAll('.state').forEach(state => {
+            state.addEventListener('mouseover', function(e) {
+                const stateName = this.getAttribute('data-name');
+                const rect = this.getBoundingClientRect();
+                
+                tooltip.textContent = stateName;
+                tooltip.style.display = 'block';
+                tooltip.style.left = e.clientX + 'px';
+                tooltip.style.top = e.clientY + 'px';
+            });
+            
+            state.addEventListener('mousemove', function(e) {
+                tooltip.style.left = e.clientX + 'px';
+                tooltip.style.top = e.clientY + 'px';
+            });
+            
+            state.addEventListener('mouseout', function() {
+                tooltip.style.display = 'none';
+            });
+            
+            state.addEventListener('click', function() {
+                selectState(this.id);
+            });
+        });
+        
+        function selectState(stateId) {
+            // Deseleccionar estado anterior
+            if (currentState) {
+                document.getElementById(currentState).classList.remove('selected');
+            }
+            
+            // Seleccionar nuevo estado
+            currentState = stateId;
+            document.getElementById(stateId).classList.add('selected');
+            
+            // Mostrar panel de datos
+            const panel = document.getElementById('dataPanel');
+            panel.style.display = 'block';
+            
+            // Actualizar datos
+            updateDataPanel(stateId);
+        }
+        
+        function updateDataPanel(stateId) {
+            const data = stateData[stateId];
+            const stateName = document.getElementById(stateId).getAttribute('data-name');
+            
+            document.getElementById('stateName').textContent = stateName;
+            
+            // Actualizar vista actual
+            if (currentView === 'poverty') {
+                document.getElementById('povertyValue').textContent = data.poverty + '%';
+                document.getElementById('povertyBar').style.width = data.poverty + '%';
+                document.getElementById('extremePovertyValue').textContent = data.extremePoverty + '%';
+            } else if (currentView === 'education') {
+                document.getElementById('educationValue').textContent = data.education + '%';
+                document.getElementById('educationBar').style.width = data.education + '%';
+                document.getElementById('illiteracyValue').textContent = data.illiteracy + '%';
+            } else if (currentView === 'health') {
+                document.getElementById('mortalityValue').textContent = data.mortality;
+                document.getElementById('mortalityBar').style.width = data.mortality + '%';
+                document.getElementById('healthValue').textContent = data.health + '%';
+            }
+        }
+        
+        function changeDataView(view) {
+            currentView = view;
+            
+            // Actualizar botones
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Ocultar todas las secciones
+            document.getElementById('povertyData').style.display = 'none';
+            document.getElementById('educationData').style.display = 'none';
+            document.getElementById('healthData').style.display = 'none';
+            
+            // Mostrar sección seleccionada
+            document.getElementById(view + 'Data').style.display = 'block';
+            
+            // Actualizar datos si hay un estado seleccionado
+            if (currentState) {
+                updateDataPanel(currentState);
+            }
+        }
+        
+        function filterByData(level) {
+            const colors = {
+                'low': '#f8d5a3',
+                'medium': '#f0a830',
+                'high': '#e04b1a',
+                'all': '' // Resetear a colores originales
+            };
+            
+            document.querySelectorAll('.state').forEach(state => {
+                if (level === 'all') {
+                    // Restaurar colores basados en datos simulados
+                    const stateId = state.id;
+                    if (stateData[stateId].poverty < 50) {
+                        state.setAttribute('fill', '#f8d5a3');
+                    } else if (stateData[stateId].poverty < 70) {
+                        state.setAttribute('fill', '#f0a830');
+                    } else {
+                        state.setAttribute('fill', '#e04b1a');
+                    }
+                } else {
+                    // Aplicar filtro
+                    state.setAttribute('fill', colors[level]);
+                }
+            });
+        }
+        
+        // Inicializar con Chiapas seleccionado
+        window.onload = function() {
+            document.getElementById('chis').classList.add('selected');
+            document.getElementById('dataPanel').style.display = 'block';
+            updateDataPanel('chis');
+        };
+    </script>
+</body>
+</html>
